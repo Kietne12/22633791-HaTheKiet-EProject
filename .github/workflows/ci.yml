@@ -44,7 +44,7 @@ jobs:
           cd order && npm test || true && cd ..
           cd api-gateway && npm test || true && cd ..
 
-      # 🐳 Enable Docker Buildx (fix lỗi requires argument)
+      # 🐳 Enable Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -55,21 +55,13 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Docker images
+      # 🐳 Build and Push Docker images
+      - name: Build & Push Docker images
         run: |
-          docker buildx build ./auth -t ${{ secrets.DOCKER_USERNAME }}/auth-service:latest --load
-          docker buildx build ./product -t ${{ secrets.DOCKER_USERNAME }}/product-service:latest --load
-          docker buildx build ./order -t ${{ secrets.DOCKER_USERNAME }}/order-service:latest --load
-          docker buildx build ./api-gateway -t ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest --load
-
-
-      - name: Push Docker images
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/auth-service
-          docker push ${{ secrets.DOCKER_USERNAME }}/product-service
-          docker push ${{ secrets.DOCKER_USERNAME }}/order-service
-          docker push ${{ secrets.DOCKER_USERNAME }}/api-gateway
-
+          docker buildx build --push --tag ${{ secrets.DOCKER_USERNAME }}/auth-service:latest ./auth
+          docker buildx build --push --tag ${{ secrets.DOCKER_USERNAME }}/product-service:latest ./product
+          docker buildx build --push --tag ${{ secrets.DOCKER_USERNAME }}/order-service:latest ./order
+          docker buildx build --push --tag ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest ./api-gateway
 
       - name: ✅ Success message
         run: echo "✅ CI/CD pipeline completed successfully and images pushed to Docker Hub!"
