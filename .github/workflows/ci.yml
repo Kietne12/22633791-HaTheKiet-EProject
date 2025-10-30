@@ -44,7 +44,7 @@ jobs:
           cd order && npm test || true && cd ..
           cd api-gateway && npm test || true && cd ..
 
-      # 🐳 Enable Docker Buildx (fix lỗi requires argument)
+      # 🐳 Setup Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -55,26 +55,34 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: 📁 Debug folder structure
-        run: ls -R
+      # 📦 Build & Push each service
+      - name: 🐳 Build & Push Auth Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./auth
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
 
+      - name: 🐳 Build & Push Product Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./product
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/product-service:latest
 
-      - name: 🐳 Build and push Docker images
-        run: |
-          docker buildx build --load --tag ${{ secrets.DOCKER_USERNAME }}/auth-service:latest ./auth
-          docker buildx build --load --tag ${{ secrets.DOCKER_USERNAME }}/product-service:latest ./product
-          docker buildx build --load --tag ${{ secrets.DOCKER_USERNAME }}/order-service:latest ./order
-          docker buildx build --load --tag ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest ./api-gateway
+      - name: 🐳 Build & Push Order Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./order
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/order-service:latest
 
-
-
-      - name: Push Docker images
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/auth-service
-          docker push ${{ secrets.DOCKER_USERNAME }}/product-service
-          docker push ${{ secrets.DOCKER_USERNAME }}/order-service
-          docker push ${{ secrets.DOCKER_USERNAME }}/api-gateway
-
+      - name: 🐳 Build & Push API Gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api-gateway
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest
 
       - name: ✅ Success message
-        run: echo "✅ CI/CD pipeline completed successfully and images pushed to Docker Hub!"
+        run: echo "✅ CI/CD pipeline completed successfully and all images pushed to Docker Hub!"
