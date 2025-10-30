@@ -1,0 +1,48 @@
+name: CI for EProject Microservices
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: |
+          cd auth && npm install && cd ..
+          cd product && npm install && cd ..
+          cd order && npm install && cd ..
+          cd api-gateway && npm install && cd ..
+
+      - name: Run tests
+        run: |
+          cd auth && npm test && cd ..
+          cd product && npm test && cd ..
+          cd order && npm test && cd ..
+          cd api-gateway && npm test && cd ..
+
+      - name: Success message
+        run: echo "✅ All microservices built and tested successfully!"

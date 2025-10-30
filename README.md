@@ -32,7 +32,7 @@ Dự án là **hệ thống thương mại điện tử backend** được xây 
 ![Login](public/results/login.png)
 
 ### 3. Dashboard
-**GET** `http://localhost:3003/auth/login`  
+**GET** `http://localhost:3003/auth/dashboard`  
 ![Dashboard](public/results/dashboard.png)
 
 ### 4. Create Product

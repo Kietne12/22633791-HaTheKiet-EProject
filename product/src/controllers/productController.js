@@ -10,8 +10,8 @@ class ProductController {
   constructor() {
     this.createOrder = this.createOrder.bind(this);
     this.getOrderStatus = this.getOrderStatus.bind(this);
+    this.getProductById = this.getProductById.bind(this);
     this.ordersMap = new Map();
-
   }
 
   async createProduct(req, res, next) {
@@ -42,21 +42,21 @@ class ProductController {
       if (!token) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-  
+
       const { ids } = req.body;
       const products = await Product.find({ _id: { $in: ids } });
-  
+
       const orderId = uuid.v4(); // Generate a unique order ID
-      this.ordersMap.set(orderId, { 
-        status: "pending", 
-        products, 
+      this.ordersMap.set(orderId, {
+        status: "pending",
+        products,
         username: req.user.username
       });
-  
+
       await messageBroker.publishMessage("orders", {
         products,
         username: req.user.username,
-        orderId, // include the order ID in the message to orders queue
+        orderId,
       });
 
       messageBroker.consumeMessage("products", (data) => {
@@ -64,27 +64,23 @@ class ProductController {
         const { orderId } = orderData;
         const order = this.ordersMap.get(orderId);
         if (order) {
-          // update the order in the map
           this.ordersMap.set(orderId, { ...order, ...orderData, status: 'completed' });
           console.log("Updated order:", order);
         }
       });
-  
-      // Long polling until order is completed
+
       let order = this.ordersMap.get(orderId);
       while (order.status !== 'completed') {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // wait for 1 second before checking status again
+        await new Promise(resolve => setTimeout(resolve, 1000));
         order = this.ordersMap.get(orderId);
       }
-  
-      // Once the order is marked as completed, return the complete order details
+
       return res.status(201).json(order);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Server error" });
     }
   }
-  
 
   async getOrderStatus(req, res, next) {
     const { orderId } = req.params;
@@ -95,6 +91,16 @@ class ProductController {
     return res.status(200).json(order);
   }
 
+  async getProductById(req, res) {
+    try {
+      const product = await Product.findById(req.params.id);
+      if (!product) return res.status(404).json({ message: "Product not found" });
+      res.json(product);
+    } catch (err) {
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+
   async getProducts(req, res, next) {
     try {
       const token = req.headers.authorization;
@@ -102,7 +108,6 @@ class ProductController {
         return res.status(401).json({ message: "Unauthorized" });
       }
       const products = await Product.find({});
-
       res.status(200).json(products);
     } catch (error) {
       console.error(error);

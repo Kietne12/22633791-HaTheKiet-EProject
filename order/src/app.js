@@ -12,11 +12,15 @@ class App {
   }
 
   async connectDB() {
-    await mongoose.connect(config.mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log("MongoDB connected");
+    try {
+      await mongoose.connect(config.mongoURI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log("✅ MongoDB connected");
+    } catch (error) {
+      console.error("❌ MongoDB connection failed:", error.message);
+    }
   }
 
   async disconnectDB() {
@@ -25,53 +29,75 @@ class App {
   }
 
   async setupOrderConsumer() {
-    console.log("Connecting to RabbitMQ...");
-  
-    setTimeout(async () => {
+    console.log("🐇 Connecting to RabbitMQ...");
+
+    const connectToRabbitMQ = async (retries = 10) => {
       try {
-        const amqpServer = "amqp://localhost";
-        const connection = await amqp.connect(amqpServer);
-        console.log("Connected to RabbitMQ");
+        const connection = await amqp.connect(config.rabbitMQURI);
+        console.log("✅ Connected to RabbitMQ");
+
         const channel = await connection.createChannel();
-        await channel.assertQueue("orders");
-  
-        channel.consume("orders", async (data) => {
-          // Consume messages from the order queue on buy
-          console.log("Consuming ORDER service");
+
+        // ✅ Đảm bảo cả hai queue tồn tại
+        await channel.assertQueue(config.rabbitMQQueue); // "orders"
+        await channel.assertQueue("products"); // Thêm dòng này để tránh lỗi NOT_FOUND
+
+        console.log(`📦 Queue "${config.rabbitMQQueue}" and "products" are ready`);
+
+        // Lắng nghe queue "orders"
+        channel.consume(config.rabbitMQQueue, async (data) => {
+          console.log("📩 Received new order message");
           const { products, username, orderId } = JSON.parse(data.content);
-  
-          const newOrder = new Order({
-            products,
-            user: username,
-            totalPrice: products.reduce((acc, product) => acc + product.price, 0),
-          });
-  
-          // Save order to DB
-          await newOrder.save();
-  
-          // Send ACK to ORDER service
-          channel.ack(data);
-          console.log("Order saved to DB and ACK sent to ORDER queue");
-  
-          // Send fulfilled order to PRODUCTS service
-          // Include orderId in the message
-          const { user, products: savedProducts, totalPrice } = newOrder.toJSON();
-          channel.sendToQueue(
-            "products",
-            Buffer.from(JSON.stringify({ orderId, user, products: savedProducts, totalPrice }))
-          );
+
+          try {
+            const newOrder = new Order({
+              products,
+              user: username,
+              totalPrice: products.reduce((acc, product) => acc + product.price, 0),
+            });
+
+            await newOrder.save();
+            channel.ack(data);
+            console.log("✅ Order saved and ACK sent to queue");
+
+            // Gửi phản hồi sang queue "products"
+            const { user, products: savedProducts, totalPrice } = newOrder.toJSON();
+
+            channel.sendToQueue(
+              "products",
+              Buffer.from(
+                JSON.stringify({
+                  orderId,
+                  user,
+                  products: savedProducts,
+                  totalPrice,
+                })
+              )
+            );
+
+            console.log(`📤 Sent message back to "products" queue for orderId ${orderId}`);
+          } catch (err) {
+            console.error("❌ Error processing order:", err.message);
+            channel.nack(data, false, false); // Từ chối message nếu lỗi
+          }
         });
       } catch (err) {
-        console.error("Failed to connect to RabbitMQ:", err.message);
+        console.error(`❌ Failed to connect to RabbitMQ: ${err.message}`);
+        if (retries > 0) {
+          console.log(`🔁 Retrying in 5 seconds... (${retries} retries left)`);
+          setTimeout(() => connectToRabbitMQ(retries - 1), 5000);
+        } else {
+          console.error("🚨 Could not connect to RabbitMQ after multiple attempts.");
+        }
       }
-    }, 10000); // add a delay to wait for RabbitMQ to start in docker-compose
+    };
+
+    connectToRabbitMQ();
   }
-
-
 
   start() {
     this.server = this.app.listen(config.port, () =>
-      console.log(`Server started on port ${config.port}`)
+      console.log(`🚀 Order Service started on port ${config.port}`)
     );
   }
 

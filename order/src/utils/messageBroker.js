@@ -5,7 +5,7 @@ const OrderService = require("../services/orderService");
 class MessageBroker {
   static async connect() {
     try {
-      const connection = await amqp.connect("amqp://localhost");
+      const connection = await amqp.connect("amqp://rabbitmq");
       const channel = await connection.createChannel();
 
       // Declare the order queue
@@ -16,15 +16,34 @@ class MessageBroker {
         try {
           const order = JSON.parse(message.content.toString());
           const orderService = new OrderService();
-          await orderService.createOrder(order);  
+
+          // Xử lý tạo order
+          await orderService.createOrder(order);
+
+          // Gửi phản hồi sang queue "products"
+          await channel.assertQueue("products", { durable: true });
+          await channel.sendToQueue(
+            "products",
+            Buffer.from(
+              JSON.stringify({
+                orderId: order.orderId,
+                status: "completed",
+                message: "Order processed successfully",
+              })
+            ),
+            { persistent: true }
+          );
+
           channel.ack(message);
         } catch (error) {
-          console.error(error);
+          console.error("Error processing order:", error);
           channel.reject(message, false);
         }
       });
+
+      console.log("✅ order-service connected to RabbitMQ and waiting for messages...");
     } catch (error) {
-      console.error(error);
+      console.error("❌ RabbitMQ connection error:", error);
     }
   }
 }
