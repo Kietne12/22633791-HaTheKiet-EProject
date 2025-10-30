@@ -64,12 +64,13 @@ jobs:
           docker buildx build -t ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest ./api-gateway --load
 
       # 📤 Push Docker images
-      - name: Push Docker images
+      - name: Build Docker images
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/product-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/order-service:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest
+          docker buildx build ./auth -t ${{ secrets.DOCKER_USERNAME }}/auth-service:latest --load
+          docker buildx build ./product -t ${{ secrets.DOCKER_USERNAME }}/product-service:latest --load
+          docker buildx build ./order -t ${{ secrets.DOCKER_USERNAME }}/order-service:latest --load
+          docker buildx build ./api-gateway -t ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest --load
+
 
       - name: ✅ Success message
         run: echo "✅ CI/CD pipeline completed successfully and images pushed to Docker Hub!"
