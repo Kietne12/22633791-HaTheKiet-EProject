@@ -22,50 +22,54 @@ jobs:
           - 15672:15672
 
     steps:
-      - name: Checkout source
+      - name: 🧾 Checkout source
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: |
           cd auth && npm install && cd ..
           cd product && npm install && cd ..
           cd order && npm install && cd ..
           cd api-gateway && npm install && cd ..
 
-      - name: Run tests
+      - name: 🧪 Run tests
         run: |
           cd auth && npm test || true && cd ..
           cd product && npm test || true && cd ..
           cd order && npm test || true && cd ..
           cd api-gateway && npm test || true && cd ..
 
-      # 🚀 BUILD DOCKER IMAGES
-      - name: Build Docker images
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/auth-service ./auth
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/product-service ./product
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/order-service ./order
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/api-gateway ./api-gateway
+      # 🐳 Enable Docker Buildx (fix lỗi requires argument)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # 🔑 LOGIN TO DOCKER HUB
+      # 🔑 Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 📦 PUSH TO DOCKER HUB
+      # 🚀 Build Docker images
+      - name: Build Docker images
+        run: |
+          docker buildx build -t ${{ secrets.DOCKER_USERNAME }}/auth-service:latest ./auth --load
+          docker buildx build -t ${{ secrets.DOCKER_USERNAME }}/product-service:latest ./product --load
+          docker buildx build -t ${{ secrets.DOCKER_USERNAME }}/order-service:latest ./order --load
+          docker buildx build -t ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest ./api-gateway --load
+
+      # 📤 Push Docker images
       - name: Push Docker images
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/auth-service
-          docker push ${{ secrets.DOCKER_USERNAME }}/product-service
-          docker push ${{ secrets.DOCKER_USERNAME }}/order-service
-          docker push ${{ secrets.DOCKER_USERNAME }}/api-gateway
+          docker push ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/product-service:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/order-service:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest
 
-      - name: Success message
+      - name: ✅ Success message
         run: echo "✅ CI/CD pipeline completed successfully and images pushed to Docker Hub!"
