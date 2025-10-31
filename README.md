@@ -46,3 +46,6 @@ Dự án là **hệ thống thương mại điện tử backend** được xây 
 ### 6. Order Product
 **POST** `http://localhost:3003/products/api/products/buy`  
 ![Order Product](public/results/order.png)
+
+### 7. Github Action: Thực hiện CI/CD 
+![Github Action](public/results/gitactions.png)
