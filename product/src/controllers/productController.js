@@ -10,7 +10,6 @@ class ProductController {
   constructor() {
     this.createOrder = this.createOrder.bind(this);
     this.getOrderStatus = this.getOrderStatus.bind(this);
-    this.getProductById = this.getProductById.bind(this);
     this.ordersMap = new Map();
   }
 
@@ -91,14 +90,9 @@ class ProductController {
     return res.status(200).json(order);
   }
 
-  async getProductById(req, res) {
-    try {
-      const product = await Product.findById(req.params.id);
-      if (!product) return res.status(404).json({ message: "Product not found" });
-      res.json(product);
-    } catch (err) {
-      res.status(500).json({ message: "Server error" });
-    }
+  async getProductById(req, res, next) {
+    const product = await Product.findById(req.params.id)
+    res.status(200).json(product)
   }
 
   async getProducts(req, res, next) {
