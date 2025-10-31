@@ -36,7 +36,7 @@ Dự án là **hệ thống thương mại điện tử backend** được xây 
 ![Dashboard](public/results/dashboard.png)
 
 ### 4. Create Product
-**POST** `http://localhost:3003/products/api/products/`  
+**POST** `http://localhost:3003/products`  
 ![Create Product](public/results/creatProduct.png)
 
 ### 5. Get Product
@@ -44,7 +44,7 @@ Dự án là **hệ thống thương mại điện tử backend** được xây 
 ![Get Product](public/results/getProduct.png)
 
 ### 6. Order Product
-**POST** `http://localhost:3003/products/api/products/buy`  
+**POST** `http://localhost:3003/products/buy`  
 ![Order Product](public/results/order.png)
 
 ### 7. Github Action: Thực hiện CI/CD 
