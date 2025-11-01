@@ -90,6 +90,10 @@ class ProductController {
     return res.status(200).json(order);
   }
 
+  async getProductById(req, res, next){
+    const product = await Product.findById(req.params.id)
+    res.status(200).json(product)
+  }
 
   async getProducts(req, res, next) {
     try {
