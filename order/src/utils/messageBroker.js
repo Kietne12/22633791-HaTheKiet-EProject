@@ -41,9 +41,9 @@ class MessageBroker {
         }
       });
 
-      console.log("✅ order-service connected to RabbitMQ and waiting for messages...");
+      console.log("order-service connected to RabbitMQ and waiting for messages...");
     } catch (error) {
-      console.error("❌ RabbitMQ connection error:", error);
+      console.error(" RabbitMQ connection error:", error);
     }
   }
 }

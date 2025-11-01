@@ -17,9 +17,9 @@ class App {
         useNewUrlParser: true,
         useUnifiedTopology: true,
       });
-      console.log("✅ MongoDB connected");
+      console.log("MongoDB connected");
     } catch (error) {
-      console.error("❌ MongoDB connection failed:", error.message);
+      console.error("MongoDB connection failed:", error.message);
     }
   }
 
@@ -29,12 +29,12 @@ class App {
   }
 
   async setupOrderConsumer() {
-    console.log("🐇 Connecting to RabbitMQ...");
+    console.log("Connecting to RabbitMQ...");
 
     const connectToRabbitMQ = async (retries = 10) => {
       try {
         const connection = await amqp.connect(config.rabbitMQURI);
-        console.log("✅ Connected to RabbitMQ");
+        console.log("Connected to RabbitMQ");
 
         const channel = await connection.createChannel();
 
@@ -42,11 +42,11 @@ class App {
         await channel.assertQueue(config.rabbitMQQueue); // "orders"
         await channel.assertQueue("products"); // Thêm dòng này để tránh lỗi NOT_FOUND
 
-        console.log(`📦 Queue "${config.rabbitMQQueue}" and "products" are ready`);
+        console.log(`Queue "${config.rabbitMQQueue}" and "products" are ready`);
 
         // Lắng nghe queue "orders"
         channel.consume(config.rabbitMQQueue, async (data) => {
-          console.log("📩 Received new order message");
+          console.log("Received new order message");
           const { products, username, orderId } = JSON.parse(data.content);
 
           try {
@@ -58,7 +58,7 @@ class App {
 
             await newOrder.save();
             channel.ack(data);
-            console.log("✅ Order saved and ACK sent to queue");
+            console.log("Order saved and ACK sent to queue");
 
             // Gửi phản hồi sang queue "products"
             const { user, products: savedProducts, totalPrice } = newOrder.toJSON();
@@ -75,19 +75,19 @@ class App {
               )
             );
 
-            console.log(`📤 Sent message back to "products" queue for orderId ${orderId}`);
+            console.log(`Sent message back to "products" queue for orderId ${orderId}`);
           } catch (err) {
-            console.error("❌ Error processing order:", err.message);
+            console.error("Error processing order:", err.message);
             channel.nack(data, false, false); // Từ chối message nếu lỗi
           }
         });
       } catch (err) {
-        console.error(`❌ Failed to connect to RabbitMQ: ${err.message}`);
+        console.error(`Failed to connect to RabbitMQ: ${err.message}`);
         if (retries > 0) {
-          console.log(`🔁 Retrying in 5 seconds... (${retries} retries left)`);
+          console.log(`Retrying in 5 seconds... (${retries} retries left)`);
           setTimeout(() => connectToRabbitMQ(retries - 1), 5000);
         } else {
-          console.error("🚨 Could not connect to RabbitMQ after multiple attempts.");
+          console.error("Could not connect to RabbitMQ after multiple attempts.");
         }
       }
     };
@@ -97,7 +97,7 @@ class App {
 
   start() {
     this.server = this.app.listen(config.port, () =>
-      console.log(`🚀 Order Service started on port ${config.port}`)
+      console.log(`Order Service started on port ${config.port}`)
     );
   }
 

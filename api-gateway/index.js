@@ -16,4 +16,4 @@ app.use("/products", (req, res) => proxy.web(req, res, { target: PRODUCT_SERVICE
 app.use("/orders", (req, res) => proxy.web(req, res, { target: ORDER_SERVICE_URL }));
 
 const port = process.env.PORT || 3003;
-app.listen(port, () => console.log(`🚀 API Gateway running on port ${port}`));
+app.listen(port, () => console.log(`API Gateway running on port ${port}`));
